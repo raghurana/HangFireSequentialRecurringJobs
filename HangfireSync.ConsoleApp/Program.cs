@@ -1,21 +1,31 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Hangfire;
 
 namespace HangfireSync.ConsoleApp
 {
     class Program
     {
+        private static int counter = 0;
+
         static void Main(string[] args)
         {
-            // The code provided will print ‘Hello World’ to the console.
-            // Press Ctrl+F5 (or go to Debug > Start Without Debugging) to run your app.
-            Console.WriteLine("Hello World!");
-            Console.ReadKey();
+            const string connectionString = @"Data Source=.\sqlexpress;Initial Catalog=Emprevo;Integrated Security=True";
 
-            // Go to http://aka.ms/dotnet-get-started-console to continue learning how to build a console app! 
+            GlobalConfiguration.Configuration.UseSqlServerStorage(connectionString);
+            GlobalJobFilters.Filters.Add(new SkipWhenPreviousJobIsRunningAttribute());
+
+            var server = new BackgroundJobServer();
+            RecurringJob.AddOrUpdate(() => RunMyTask(), Cron.Minutely);
+
+            Console.WriteLine("Press enter key to stop.");
+            Console.ReadLine();
+
+            server.Dispose();
+        }
+
+        public static void RunMyTask()
+        {
+            MyTaskService.RunTask(++counter);
         }
     }
 }
